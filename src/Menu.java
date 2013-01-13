@@ -7,6 +7,7 @@ public class Menu
 {
 	private String[] options;
 	private String name;
+
 	public String[] getOptions() {
 		return options;
 	}
@@ -19,15 +20,16 @@ public class Menu
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	private void printMenu()
 	{
 		//to clean the screen before outputting the new menu
-		char esc = 27;
-		System.out.print(esc + "[2J");
-		System.out.print(esc + "[<0>;<0>H");
-		System.out.println();
 		String spaces = "";
+		Utils.clearScreen();
+		Person currentUser = AbsenceTracker.users.getCurrentUser();
+		System.out.println("Current user: " + currentUser.getId() + " - " + 
+						   currentUser.getLastName() + " " + currentUser.getFirstName());
+		System.out.println();
 		
 		int titleInTheMiddle = (80 - name.length())/2;
 		spaces =  new String(new char[titleInTheMiddle]).replace('\0', ' ');
@@ -84,7 +86,7 @@ public class Menu
 			}
 			if ((i < 1) || (i > options.length))
 			{
-				System.out.println("Wrong choice (" + data + ") please try again. Any key to continue");
+				System.out.println("Wrong choice (" + data + ") please try again. Return to continue");
 				try 
 				{
 					br.read();
@@ -102,5 +104,5 @@ public class Menu
 		}
 		
 		return (choice);
-	}
+	}	
 }

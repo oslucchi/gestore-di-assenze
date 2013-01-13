@@ -1,10 +1,12 @@
 import static org.junit.Assert.*;
 
+import java.io.FileNotFoundException;
+
 import org.junit.*;
 
-public class RAtest 
+public class RandomAccessTest 
 {
-	RandomAcess st;
+	RandomAccess st;
 	
 	public boolean testRandomAccess()
 	{
@@ -18,7 +20,7 @@ public class RAtest
 		{
 			System.out.println(a[i].getFirst() + " " + a[i].getSecond());
 		}		
-		DoubleLinkedList result = st.Search(RandomAcess.SEARCH_BY_ID, "120010");
+		DoubleLinkedList result = st.Search(RandomAccess.SEARCH_BY_ID, "120010");
 		if (result.isEmpty())
 		{
 			fail("Existent entry 120010 not found");
@@ -30,9 +32,9 @@ public class RAtest
 		return(true);
 	}
 
-	public boolean testAddElement()
+	public boolean testAddElement() throws FileNotFoundException
 	{
-		SchoolCitizen xD = new SchoolCitizen();
+		SchoolCitizen xD = new SchoolCitizen("Data/schoolCitizens");
 		
 		xD.addElement("wewaglio", "osvaldo", xD.students.generateId(),  "+233423423524", 'S', 11);
 		xD.addElement("AddTeacher", "teacher", xD.teachers.generateId(),  "+1234567890", 'T', 99);
@@ -40,9 +42,9 @@ public class RAtest
 	}
 	
 	@Test
-	public void test() 
+	public void test() throws FileNotFoundException 
 	{
-		st = new RandomAcess("Data/SchoolCitizens", 'S');
+		st = new RandomAccess("Data/SchoolCitizens", 'S');
 		assertTrue(testRandomAccess());
 		assertTrue(testAddElement());
 		st.removeRecord(130230);

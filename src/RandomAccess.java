@@ -4,7 +4,7 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-public class RandomAcess
+public class RandomAccess
 {
 	final static long recSize = 85;
 	public static int SEARCH_BY_ID = 1;
@@ -20,17 +20,11 @@ public class RandomAcess
 	private ArrayList<Pair> tempIndexId;
 	private DoubleLinkedList searchResult;
 
-	public RandomAcess(String fileName, char includeRole)
+	public RandomAccess(String fileName, char includeRole) throws FileNotFoundException
 	{
 		this.fileName = fileName;
 		this.includeRole = includeRole;
-		try {
-			myFile = new RandomAccessFile(fileName, "rw");
-		} 
-		catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		myFile = new RandomAccessFile(fileName, "rw");
 		CreateIndex();
 	}
 
@@ -112,7 +106,7 @@ public class RandomAcess
 		lastNameIdx = QuickSort(lastNameIdx, lastNameIdx.length - 1);
 	}
 	
-	private Object getPersonFromFile(int position)
+	public Object getPersonFromFile(int position)
 	{
 		String record = null;
 		try 
@@ -173,16 +167,19 @@ public class RandomAcess
 			return(BinarySearch(searchKey, first, position - 1));
 	}
 
+	public void SetIndexToSearch(int whichIdx)
+	{
+		if (whichIdx == SEARCH_BY_ID)
+			searchIndex = idIdx;
+		else
+			searchIndex = lastNameIdx;
+	}
+	
 	public DoubleLinkedList Search(int whichIdx, String searchKey)
 	{
 		searchResult = new DoubleLinkedList();
-		if (whichIdx == SEARCH_BY_ID)
-			searchIndex = idIdx;
-		else if (whichIdx == SEARCH_BY_NAME)
-			searchIndex = lastNameIdx;
-		else
-			return(null);
-		return(BinarySearch(searchKey, 0, searchIndex.length));
+		SetIndexToSearch(whichIdx);
+		return(BinarySearch(searchKey, 0, searchIndex.length - 1));
 	}
 
 	private int whichRecord(String searchKey, int first, int last)
@@ -223,13 +220,15 @@ public class RandomAcess
 		}	
 	}
 	
-	public void removeRecord(int id)
+	public void removeRecord(int id) throws RandomAccessException
 	{
 		searchResult = new DoubleLinkedList();
 		searchIndex = idIdx;
 		int recNo = whichRecord(String.valueOf(id), 0, searchIndex.length);
 		if (recNo == -1)
-			return;
+			throw new RandomAccessException(
+					RandomAccessException.RECORD_NOT_FOUND, String.valueOf(id) + " doesn't exists");
+		
 		RandomAccessFile myFileW = null;
 		try 
 		{
@@ -259,13 +258,42 @@ public class RandomAcess
 		CreateIndex();
 	}
 	
+	public void replaceRecord(int id, String record)
+	{
+		searchResult = new DoubleLinkedList();
+		searchIndex = idIdx;
+		int recNo = whichRecord(String.valueOf(id), 0, searchIndex.length);
+		if (recNo == -1)
+			return;
+		try
+		{
+			myFile.seek(recNo * recSize);
+			myFile.writeBytes(record + "\n");
+		}
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+	}
+	
 	public int generateId()
 	{
 		int id;
 		int year = (Calendar.getInstance().get(Calendar.YEAR)) - 2000;
 		String biggestID = idIdx[idIdx.length - 1].getFirst();
 		if(Integer.parseInt(biggestID.substring(0, 2)) < year)
-			id = year * 10000 + 1;
+		{
+			id = year * 10000;
+			if (includeRole == 'T')
+			{
+				id = id + 9000;
+			}
+			else if (includeRole == 'A')
+			{
+				id = id + 9900;
+			}
+		}
 		else
 			id = Integer.parseInt(biggestID) + 1;
 		return (id);

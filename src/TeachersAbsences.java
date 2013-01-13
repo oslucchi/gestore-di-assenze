@@ -3,19 +3,19 @@ import java.util.Date;
 
 public class TeachersAbsences 
 {
-	@SuppressWarnings("unused")
-	private class TeacherAbsenceDates extends PersonAbsenceDates
+	public class TeacherAbsenceDates extends PersonAbsenceDates
 	{
+		private static final long serialVersionUID = 1L;
 		private char medCert;		
 		public TeacherAbsenceDates(Person person)
 		{
 			super(person);
 			medCert = ' ';
 		}
-		private char getMedCert() {
+		public char getMedCert() {
 			return medCert;
 		}
-		private void setMedCert(char medCert) {
+		public void setMedCert(char medCert) {
 			this.medCert = medCert;
 		}
 	}
@@ -25,7 +25,6 @@ public class TeachersAbsences
 		absenceList = new DoubleLinkedList();
 	}
 	
-	@SuppressWarnings("unused")
 	public void addAbsence(Person person, Date date)
 	{
 		TeacherAbsenceDates onList = (TeacherAbsenceDates) absenceList.first(); 
@@ -34,11 +33,7 @@ public class TeachersAbsences
 			onList = (TeacherAbsenceDates) absenceList.after();
 		}
 		
-		if (onList.getPerson().getId() == person.getId())
-		{
-			onList.addAbsence(date);
-		}
-		else 
+		if ((onList == null) || (onList.getPerson().getId() != person.getId()))
 		{
 			TeacherAbsenceDates had = new TeacherAbsenceDates(person);
 			had.addAbsence(date);
@@ -50,6 +45,10 @@ public class TeachersAbsences
 			{
 				absenceList.insertBefore(had);
 			}
+		}
+		else 
+		{
+			onList.addAbsence(date);
 		}
 	}
 
@@ -67,21 +66,21 @@ public class TeachersAbsences
 					if(item.getAbsenceDates().size() > 1)
 					{
 						item.medCert = 'X';
+						item = (TeacherAbsenceDates) absenceList.after();
 					}
 				}
 				else
 				{
-					absenceList.removeCurrent();
+					item = (TeacherAbsenceDates) absenceList.removeCurrent();
 				}
 			}
-			item = (TeacherAbsenceDates) absenceList.after();
 		}
 	}
 	
 	public void CleanUpTeacherMC(Person person)
 	{
 		TeacherAbsenceDates onList = (TeacherAbsenceDates) absenceList.first(); 
-		while((onList != null) && (onList.getPerson().getId() == person.getId()))
+		while((onList != null) && (onList.getPerson().getId() != person.getId()))
 		{
 			onList = (TeacherAbsenceDates) absenceList.after();
 		}
@@ -90,4 +89,10 @@ public class TeachersAbsences
 			absenceList.removeCurrent();
 		}
 	}
+
+	public DoubleLinkedList getAbsenceList() 
+	{
+		return absenceList;
+	}
+	
 }

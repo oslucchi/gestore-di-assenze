@@ -1,15 +1,19 @@
+import java.io.Serializable;
 import java.util.Date;
-public class StudentDailyAbsenceList {
+
+public class StudentDailyAbsenceList implements Serializable
+{
+	private static final long serialVersionUID = 1L;
 
 	private DoubleLinkedList absenceList;
 	private Date date;
 	
-	public StudentDailyAbsenceList()
+	public StudentDailyAbsenceList(String fileName)
 	{
 		date = new Date();
 		absenceList = new DoubleLinkedList();
 	}
-
+	
 	public void setJustified(Person person)
 	{
 		Absence onList = (Absence) absenceList.first(); 
@@ -22,8 +26,8 @@ public class StudentDailyAbsenceList {
 		{
 			onList.setJustified('Y');
 		}
-
 	}
+	
 	public void addAbsence(Absence absence)
 	{
 		this.absenceList.insertTail(absence);
@@ -38,5 +42,4 @@ public class StudentDailyAbsenceList {
 	{
 		return date;
 	}
-
 }

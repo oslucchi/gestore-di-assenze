@@ -1,11 +1,17 @@
-public class DoubleLinkedList
+import java.io.Serializable;
+
+public class DoubleLinkedList implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	/*
 	 * Class to implement the object used in the DoubleLinkedList
 	 * Each element will have pointers to the next and previos element in the list
 	 */
-	private class DoubleLinkedListElement
+	private class DoubleLinkedListElement implements Serializable
 	{
+		private static final long serialVersionUID = 1L;
+
 		private DoubleLinkedListElement next; // used to reference the next element in the list
 		private DoubleLinkedListElement prev; // used to reference the previous element in the list
 		private Object data; // used to store data. Type Object will allow the class to be generic
@@ -221,9 +227,9 @@ public class DoubleLinkedList
 		/*
 		 * Moves current accordingly with the logic explained above
 		 */
-		if(current.getPrev() != root)
-			current = current.getPrev();
-		else
+//		if(current.getPrev() != root)
+//			current = current.getPrev();
+//		else
 			current = current.getNext();
 		// Physically remove it from the list by setting prev and next elements' pointers to each other
 		temp.getPrev().setNext(temp.getNext());

@@ -1,7 +1,14 @@
-
 public class Student extends Person
 {
+	private static final long serialVersionUID = 1L;
+
 	private int grade;
+	
+	public Student()
+	{
+		super();
+	}
+	
 	public Student(String record)
 	{
 		super(record);

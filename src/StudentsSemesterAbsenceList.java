@@ -6,10 +6,9 @@ public class StudentsSemesterAbsenceList
 	
 	public StudentsSemesterAbsenceList()
 	{
-		
+		semesterAbsence = new DoubleLinkedList();
 	}
 	
-	@SuppressWarnings("unused")
 	public void addAbsence(Person person, Date date)
 	{
 		PersonAbsenceDates onList = (PersonAbsenceDates) semesterAbsence.first(); 
@@ -18,11 +17,7 @@ public class StudentsSemesterAbsenceList
 			onList = (PersonAbsenceDates) semesterAbsence.after();
 		}
 		
-		if (onList.getPerson().getId() == person.getId())
-		{
-			onList.addAbsence(date);
-		}
-		else 
+		if ((onList == null) || (onList.getPerson().getId() != person.getId()))
 		{
 			PersonAbsenceDates had = new PersonAbsenceDates(person);
 			had.addAbsence(date);
@@ -34,6 +29,10 @@ public class StudentsSemesterAbsenceList
 			{
 				semesterAbsence.insertBefore(had);
 			}
+		}
+		else 
+		{
+			onList.addAbsence(date);
 		}
 	}
 

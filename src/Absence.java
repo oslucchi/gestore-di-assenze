@@ -1,7 +1,19 @@
-public class Absence {
+import java.io.Serializable;
+
+public class Absence implements Serializable
+{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	
 	private char justified;
 	private Student student;
+	public Absence()
+	{
+		
+	}
+	
 	public Absence(Student student) 
 	{
 		this.student = student;

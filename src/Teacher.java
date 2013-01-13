@@ -1,12 +1,14 @@
 
 public class Teacher extends Person
 {
+	private static final long serialVersionUID = 1L;
+
 	private String password;
 	public Teacher(String record)
 	{
 		super(record);
 		role = 'T';
-		this.password = record.substring(72, 83);
+		this.password = record.substring(72, 82);
 	}
 	
 	public Teacher(String lastName, String firstName, int id, String contactNumber) 

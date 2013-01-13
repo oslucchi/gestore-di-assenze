@@ -1,6 +1,10 @@
+import java.io.Serializable;
 
-public class Person 
+
+public class Person implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+	
 	protected int id;
 	protected String lastName;
 	protected String firstName;
@@ -20,7 +24,7 @@ public class Person
 	}
 	public void setLastName(String lastName) 
 	{
-		this.lastName = lastName;
+		this.lastName = lastName.toUpperCase();
 	}
 	public String getFirstName() 
 	{
@@ -28,7 +32,7 @@ public class Person
 	}
 	public void setFirstName(String firstName) 
 	{
-		this.firstName = firstName;
+		this.firstName = Utils.toProperCase(firstName);
 	}
 	public String getContactNumber() 
 	{
@@ -50,7 +54,7 @@ public class Person
 	public Person(String record)
 	{
 		this.lastName = record.substring(0, 20).trim().toUpperCase();
-		this.firstName = record.substring(20, 50).trim().toLowerCase();
+		this.firstName = Utils.toProperCase(record.substring(20, 50).trim());
 		this.id = Integer.parseInt(record.substring(50, 56).trim());
 		this.contactNumber = record.substring(56, 71).trim();
 	}
@@ -58,9 +62,14 @@ public class Person
 	public Person(String lastName, String firstName, int id, String contactNumber) 
 	{
 		this.lastName = lastName.toUpperCase();
-		this.firstName = firstName.toLowerCase();
+		this.firstName = Utils.toProperCase(firstName);
 		this.id = id;
 		this.contactNumber = contactNumber;
+	}
+	
+	public Person() 
+	{
+		// TODO Auto-generated constructor stub
 	}
 
 }
