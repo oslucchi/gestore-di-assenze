@@ -9,18 +9,212 @@ import java.util.Date;
 public class AbsenceTracker extends IBIO
 {
 	static Menu mainMenu;
-	static Menu stlMenu;
 	static Users users = null;
 	static SchoolCitizen sc = null;
 	static StudentDailyAbsenceList sdal = null;
 	static SimpleDateFormat formatter = null;
+	static FileSaveLoad fileMngr = null;
+	static Configuration c = null;
+
 	
 	final static int EXIT_ON_ERROR_FILE_NOT_FOUND = 1;
 	
+	private static void dsaMenuManager()
+	{
+		Menu menu = new Menu();
+		menu.setOptions(
+			new String[]
+			{ 
+				"Add absence",
+				"Justify absence",
+				"Print today's absence list",
+				"Update semester absence",
+				"Print semester absences"
+			}
+		);
+		menu.setName("Student's absence management");
+
+		boolean loop = true;
+		while(loop)
+		{
+			switch(menu.getChoice())
+			{
+			case 1:
+				Utils.clearScreen();
+				System.out.println("** Add absence **\n");
+				String lastName = input("Last name: ");
+				while(!lastName.matches("[a-zA-z ]+") && (lastName.compareTo("") != 0))
+					lastName = input("Only alphabetical allowed. Last name: ");
+				DoubleLinkedList dl = sc.search('S', RandomAccess.SEARCH_BY_NAME, lastName.toUpperCase());
+				Student student = null;				
+				
+				// Check if any of the returned student is already marked as absent on the SDAL
+				// Do only if we have found a student in our search and the SDAL is not empty
+				student = (Student) dl.first();
+				if ((student != null) && !sdal.getAbsenceList().isEmpty())
+				{
+					while(student != null)
+					{
+						int i;
+						Absence testIfThere = (Absence) sdal.getAbsenceList().first();
+						for(i = 0; i < sdal.getAbsenceList().size(); i++)
+						{
+							if (student.getId() == testIfThere.getStudent().getId())
+							{
+								break;
+							}
+							testIfThere = (Absence) sdal.getAbsenceList().after();
+						}
+						if (i < sdal.getAbsenceList().size())
+						{
+							// The student found is already on the SDAL
+							// remove it from the list of student found in order to avoid to present it
+							student = (Student) dl.removeCurrent();
+						}
+						else
+						{
+							// The student has not been marked absent yet
+							// It is a valid entry in the student found list to be presented
+							student = (Student) dl.after();
+						}
+					}
+				}
+				
+				if (dl.isEmpty())
+				{
+					Utils.printError("No students found");
+					break;
+				}
+				else
+				{
+					int counter = 1;
+					student = (Student) dl.first();
+					while(student != null)
+					{
+						System.out.println(counter + ") " + student.getId() + " " + student.getLastName() +
+								" " + student.getFirstName());
+						counter++;
+						student = (Student) dl.after();
+					}
+					int choice = inputInt("Enter student number (Return to exit): ");
+					while ((choice < 0) || (choice > dl.size()))
+						choice = inputInt("invalid choice try again. Enter student number (Return to exit): ");
+					if (choice == 0)
+						break;
+					student = (Student) dl.first();
+					for(int i = 1; i< choice; i++)
+						student = (Student) dl.after();
+				}
+				sdal.addAbsence(new Absence(student));
+				fileMngr.setFileName(c.getStudentDailyAbsencePath());
+				fileMngr.Save(sdal);
+				Utils.printError("Absence added");
+				break;
+			
+			case 2:
+				dl = sdal.getAbsenceList(); 
+				Absence absence = (Absence) dl.first();
+				int counter = 1;
+				boolean innerLoop = true;
+				int pageSize = 4;
+				while(innerLoop)
+				{
+					Utils.clearScreen();
+					System.out.println("** Justify absence **\n");
+					int startFrom = counter;
+					for(int i = 1; (i % pageSize != 0) && (absence != null); i++)
+					{
+						student = absence.getStudent();
+						System.out.println(counter + ") " +
+										   String.format("%06d %-20s%-30s%-15s%c",
+												   		 student.getId(), 
+												   		 student.getLastName(), 
+												   		 student.getFirstName(), 
+												   		 student.getContactNumber(), 
+												   		 absence.getJustified()));
+						absence = (Absence) dl.after();
+						counter++;
+					}
+					while(true)
+					{
+						String prompt = "\nChoose a number to act on student or e'X'it";
+						if (absence != null)
+							prompt += " 'N'ext";
+						if (startFrom > 1)
+							prompt += " 'P'rev";
+						prompt += ": ";
+						String whatNow = input(prompt).toUpperCase();
+						if (whatNow.compareTo("X") == 0)
+						{
+							innerLoop = false;
+							break;
+						}
+						
+						if ((absence != null) && whatNow.compareTo("N") == 0)
+						{
+							break;
+						}
+						
+						if ((startFrom > 1) && (whatNow.compareTo("P") == 0))
+						{
+							int linesOnPage = counter - startFrom;
+							for(int i = pageSize + linesOnPage; (i > 1); i--)
+							{
+								counter--;
+								if (absence == null)
+									absence = (Absence) dl.last();
+								else
+									absence = (Absence) dl.before();
+							}
+							if (absence == null)
+							{
+								absence = (Absence) dl.first();
+								counter = 1;
+							}
+							break;
+						}
+						
+						if (whatNow.matches("[0-9]+"))
+						{
+							int studentSelected = Integer.parseInt(whatNow);
+							if ((studentSelected >= startFrom) && (studentSelected < counter))
+							{
+								char justify = inputChar("Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
+								while("YNL".indexOf(Character.toUpperCase(justify)) == -1)
+									justify = inputChar("Wrong choice. Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
+								justify = Character.toUpperCase(justify);
+								DoubleLinkedList.DoubleLinkedListElement current = dl.getPointerToCurrent();
+								for(int i = counter; i > studentSelected; i--)
+								{
+									absence = (Absence) dl.before();
+								}
+								sdal.setJustified(absence.getStudent(), justify);
+								dl.setPointerToCurrent(current);
+								for(int i = counter; i > startFrom; i--)
+								{
+									counter--;
+									absence = (Absence) dl.before();
+								}
+								break;
+							}
+						}
+					}
+					
+					System.out.println("");
+				}
+				break;
+					
+			default:
+				loop = false;
+				break;
+			}
+		}
+	}
+	
 	private static void stlMenuManager()
 	{
-		stlMenu = new Menu();
-		stlMenu.setOptions(
+		Menu menu = new Menu();
+		menu.setOptions(
 			new String[]
 			{ 
 				"Add",
@@ -28,12 +222,12 @@ public class AbsenceTracker extends IBIO
 				"Search and Update"
 			}
 		);
-		stlMenu.setName("School citizens maintenance");
+		menu.setName("School citizens maintenance");
 
 		boolean loop = true;
 		while(loop)
 		{
-			switch(stlMenu.getChoice())
+			switch(menu.getChoice())
 			{
 			case 1:
 				Utils.clearScreen();
@@ -128,7 +322,7 @@ public class AbsenceTracker extends IBIO
 						lastName = person.getLastName();
 
 					contactNumber = input("Contact number [" + person.getContactNumber() + "]: ");
-					while(!contactNumber.matches("[a-zA-z ]+") && (contactNumber.compareTo("") != 0))
+					while(!contactNumber.matches("\\+[1-9][0-9]+") && (contactNumber.compareTo("") != 0))
 						contactNumber = input("International number prefixed by + country code. Contact number [" + 
 											person.getContactNumber() + "]: ");
 					if (contactNumber.compareTo("") == 0)
@@ -217,7 +411,6 @@ public class AbsenceTracker extends IBIO
 	public static void main(String[] args) 
 	{
 		// Get configuration from the INI file
-		Configuration c = null;
 		try {
 			c = new Configuration();
 		}
@@ -264,7 +457,7 @@ public class AbsenceTracker extends IBIO
 		
 		// Initialize StudentsDailyAbsenceList by loading the currently saved data.
 		// If the absence list is not dated today then drop the object and initialize an empty one.
-		FileSaveLoad fileMngr = new FileSaveLoad(c.getStudentDailyAbsencePath());
+		fileMngr = new FileSaveLoad(c.getStudentDailyAbsencePath());
 		if (((sdal = (StudentDailyAbsenceList) fileMngr.Load()) == null) ||
 			(formatter.format(sdal.getDate()).compareTo(formatter.format(new Date())) != 0))
 		{
@@ -278,9 +471,7 @@ public class AbsenceTracker extends IBIO
 			new String[] 
 			{ 
 				"School citizens maintenance",
-				"Daily student's absence entry",
-				"Print today's student's absences list",
-				"Print Quarter absences list",
+				"Student's absence management",
 				"Daily teacher's absence entry",
 				"Unjustified teacher absences list",
 				"Change password"
@@ -298,17 +489,17 @@ public class AbsenceTracker extends IBIO
 				else
 					Utils.printError("You are not allowed to use this choice");
 				break;
+			
 			case 2:
+				dsaMenuManager();
 				break;
+			
 			case 3:
 				break;
 			case 4:
 				break;
+
 			case 5:
-				break;
-			case 6:
-				break;
-			case 7:
 				Utils.clearScreen();
 				System.out.println("** Change password **\n");
 				String password = getPassword("Enter current password: ");

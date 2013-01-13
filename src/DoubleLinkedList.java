@@ -8,7 +8,7 @@ public class DoubleLinkedList implements Serializable
 	 * Class to implement the object used in the DoubleLinkedList
 	 * Each element will have pointers to the next and previos element in the list
 	 */
-	private class DoubleLinkedListElement implements Serializable
+	public class DoubleLinkedListElement implements Serializable
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -133,7 +133,10 @@ public class DoubleLinkedList implements Serializable
 	public Object before()
 	{
 		if (current.getPrev() == root)
+		{
+			current = root;
 			return(null);
+		}
 		current = current.getPrev();
 		return (current.getData());
 	}
@@ -146,6 +149,7 @@ public class DoubleLinkedList implements Serializable
 	{
 		if (current.getNext() == root)
 		{
+			current = root;
 			return(null);
 		}
 		current = current.getNext();
@@ -280,5 +284,15 @@ public class DoubleLinkedList implements Serializable
 		{
 			removeCurrent();
 		}
+	}
+	
+	public DoubleLinkedListElement getPointerToCurrent()
+	{
+		return current;
+	}
+
+	public void setPointerToCurrent(DoubleLinkedListElement current)
+	{
+		this.current = current;
 	}
 }

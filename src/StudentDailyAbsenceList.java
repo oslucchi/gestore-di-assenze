@@ -14,7 +14,7 @@ public class StudentDailyAbsenceList implements Serializable
 		absenceList = new DoubleLinkedList();
 	}
 	
-	public void setJustified(Person person)
+	public void setJustified(Person person, char justified)
 	{
 		Absence onList = (Absence) absenceList.first(); 
 		while((onList != null) && (onList.getStudent().getId() != person.getId()))
@@ -24,7 +24,7 @@ public class StudentDailyAbsenceList implements Serializable
 		
 		if (onList != null)
 		{
-			onList.setJustified('Y');
+			onList.setJustified(justified);
 		}
 	}
 	
