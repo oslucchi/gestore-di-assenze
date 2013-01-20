@@ -34,20 +34,29 @@ public class RandomAccessTest
 
 	public boolean testAddElement() throws FileNotFoundException
 	{
-		SchoolCitizen xD = new SchoolCitizen("Data/schoolCitizens");
+		SchoolCitizen xD = new SchoolCitizen("Test/Data/schoolCitizens");
 		
-		xD.addElement("wewaglio", "osvaldo", xD.students.generateId(),  "+233423423524", 'S', 11);
-		xD.addElement("AddTeacher", "teacher", xD.teachers.generateId(),  "+1234567890", 'T', 99);
+		xD.addElement('S', "wewaglio", "osvaldo", "+233423423524", 11);
+		xD.addElement('T', "AddTeacher", "teacher", "+1234567890", 99);
 		return (true);
 	}
 	
 	@Test
 	public void test() throws FileNotFoundException 
 	{
-		st = new RandomAccess("Data/SchoolCitizens", 'S');
+		System.exit(0);
+		st = new RandomAccess("Test/Data/SchoolCitizens", 'S');
 		assertTrue(testRandomAccess());
 		assertTrue(testAddElement());
-		st.removeRecord(130230);
+		try
+		{
+			st.removeRecord(130230);
+		}
+		catch (RandomAccessException e)
+		{
+			if (e.getErrorCode() != RandomAccessException.RECORD_NOT_FOUND)
+				fail("Exception return, error code is different thant record not found");
+		}
 	}
 	
 

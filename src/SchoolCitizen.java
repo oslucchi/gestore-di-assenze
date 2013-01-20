@@ -68,5 +68,15 @@ public class SchoolCitizen
 		else if(person.getRole()  == 'A')
 			admins.replaceRecord(person.getId(), ((OfficeAdmin) person).toString());
 	}
+	
+	public DoubleLinkedList getAll(char role)
+	{
+		if (role == 'S')
+			return students.getAll();
+		else if (role  == 'T')
+			return teachers.getAll();
+		else
+			return admins.getAll();
+	}
 
 }

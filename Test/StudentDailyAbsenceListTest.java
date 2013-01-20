@@ -5,10 +5,11 @@ public class StudentDailyAbsenceListTest
 	@Test
 	public void test() {
 		StudentDailyAbsenceList testing = null;
-		FileSaveLoad fileMngr = new FileSaveLoad("Data/studentDailyAbsence");
+		FileSaveLoad fileMngr = new FileSaveLoad("Test/Data/studentDailyAbsence");
 		if ((testing = (StudentDailyAbsenceList) fileMngr.Load()) == null)
 		{
-			testing = new StudentDailyAbsenceList("Data/studentDailyAbsence");
+			fileMngr = new FileSaveLoad("Test/Data/studentDailyAbsence");
+			testing = (StudentDailyAbsenceList) fileMngr.Load(); 
 		}
 		
 		Absence a = new Absence(new Student("consentino", "alberto", 120001, "120001", 12));
@@ -18,7 +19,7 @@ public class StudentDailyAbsenceListTest
 		a = new Absence(new Student("prorororo", "brutewr", 120100, "120100", 12));
 		testing.addAbsence(a);
 		DoubleLinkedList dl = testing.getAbsenceList();
-		testing.setJustified(new Student("uhfuf", "rewsff", 120010, "120010", 12));
+		testing.setJustified(new Student("uhfuf", "rewsff", 120010, "120010", 12), 'Y');
 		a = (Absence)dl.first();
 		while(a != null)
 		{
@@ -30,7 +31,7 @@ public class StudentDailyAbsenceListTest
 		fileMngr.Save(testing);
 		if ((testing = (StudentDailyAbsenceList) fileMngr.Load()) == null)
 		{
-			testing = new StudentDailyAbsenceList("Data/studentDailyAbsence");
+			testing = (StudentDailyAbsenceList) fileMngr.Load(); 
 		}
 		dl = testing.getAbsenceList();
 		a = (Absence)dl.first();

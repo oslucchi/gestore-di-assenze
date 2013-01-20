@@ -164,7 +164,10 @@ public class RandomAccess
 		else if (idxValue.compareTo(searchKey) < 0)
 			return(BinarySearch(searchKey, position + 1, last));
 		else
-			return(BinarySearch(searchKey, first, position - 1));
+		{
+			position--;
+			return(BinarySearch(searchKey, first, (position < first ? first : position)));
+		}
 	}
 
 	public void SetIndexToSearch(int whichIdx)
@@ -311,5 +314,40 @@ public class RandomAccess
 
 	public String getFileName() {
 		return fileName;
+	}
+	
+	public DoubleLinkedList getAll()
+	{
+		DoubleLinkedList dl = new DoubleLinkedList();
+		for(int i = 0; i < lastNameIdx.length; i++)
+		{
+			String record = null;
+			try 
+			{
+				myFile.seek(lastNameIdx[i].getSecond() * recSize);
+				record = myFile.readLine();
+			}
+			catch (IOException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			Object item = null;
+			if (includeRole == 'S')
+			{
+				item = new Student(record);
+			}
+			if (includeRole == 'T')
+			{
+				item = new Teacher(record);
+			}
+			if (includeRole == 'A')
+			{
+				item = new OfficeAdmin(record);
+			}
+			dl.insertTail(item);
+		}
+		return (dl);
 	}
 }

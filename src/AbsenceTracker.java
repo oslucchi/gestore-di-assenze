@@ -12,27 +12,149 @@ public class AbsenceTracker extends IBIO
 	static Users users = null;
 	static SchoolCitizen sc = null;
 	static StudentDailyAbsenceList sdal = null;
+	static StudentsSemesterAbsenceList ssal = null;
+	static TeachersAbsences ta = null;
 	static SimpleDateFormat formatter = null;
 	static FileSaveLoad fileMngr = null;
 	static Configuration c = null;
-
-	
 	final static int EXIT_ON_ERROR_FILE_NOT_FOUND = 1;
-	
-	private static void dsaMenuManager()
+
+	public static Object showPages(DoubleLinkedList dl, boolean useNumbers)
 	{
+		char objectType = ' ';
+		Person person = null;
+		PersonAbsenceDates pad = null;
+		Absence abs = null;
+		TeacherAbsenceDates tad = null;
+		
+		dl.initPageManager(4);
+		DoubleLinkedList page = null;
+		page = dl.getNextPage();
+		while (true)
+		{
+			char justified = ' ';
+			Utils.clearScreen();
+			Object dataObject = page.first();
+			for (int i = 0; i< page.size(); i++)
+			{
+				if (dataObject instanceof TeacherAbsenceDates)
+				{
+					tad = (TeacherAbsenceDates) dataObject;
+					person = tad.getPerson();
+					objectType = 'D';
+				}
+				else if (dataObject instanceof Absence)
+				{
+					abs = (Absence) dataObject;
+					person = abs.getStudent();
+					objectType = 'B';
+				}
+				else if (dataObject instanceof Student)
+				{
+					person = (Student) dataObject;
+					objectType = 'S';
+				}
+				else if (dataObject instanceof Teacher)
+				{
+					person = (Teacher) dataObject;
+					objectType = 'T';
+				}
+				else if (dataObject instanceof OfficeAdmin)
+				{
+					person = (OfficeAdmin) dataObject;
+					objectType = 'A';
+				}
+				else if (dataObject instanceof PersonAbsenceDates)
+				{
+					pad = (PersonAbsenceDates) dataObject;
+					person = pad.getPerson();
+					objectType = 'P';
+				} 
+
+				switch(objectType)
+				{
+				case 'B':
+					justified = abs.getJustified();
+					break;
+				case 'D':
+					justified = tad.getMedCert();
+					break;
+				case 'P':
+				case 'S':
+				case 'T':
+				case 'A':
+					justified = ' ';
+					break;
+				}
+				System.out.println(
+						String.format("%02d)  %06d %-20s%-30s%-15s %c",
+								i + 1,
+								person.getId(), 
+								person.getLastName(), 
+								person.getFirstName(), 
+								person.getContactNumber(),
+								justified));
+				dataObject = page.after();
+			}
+			
+			String prompt = "\nChoose e'X'it";
+			
+			if(useNumbers)
+				prompt += " | number to act on student";
+			if (dl.hasNextPage())
+				prompt += " | 'N'ext";
+			if (dl.hasPrevPage())
+				prompt += " | 'P'rev";
+			prompt += ": ";
+			String whatNow = input(prompt).toUpperCase();
+
+			// Exit if the option selected is X
+			if (whatNow.compareTo("X") == 0)
+			{
+				return (null);
+			}
+
+			// Check if we are not on the last page (the current absence is not null)
+			// and implement the page forward function
+			if (dl.hasNextPage() && whatNow.compareTo("N") == 0)
+			{
+				page = dl.getNextPage();
+			}
+
+			// Check if we are not on the first page (startFrom should be greater than 1)
+			// and implement the page backward function
+			if (dl.hasPrevPage() && (whatNow.compareTo("P") == 0))
+			{
+				page = dl.getPrevPage();
+			}
+
+			// If the choice is a number check if it is related to one of the currently
+			// presented options. In that case proceed asking which justification to apply
+			// and apply it.
+			if(useNumbers)
+			{
+				if (whatNow.matches("[0-9]+"))
+				{
+					return(page.get(Integer.parseInt(whatNow) - 1));
+				}
+			}
+		}
+	}
+	
+	public static void tamMenuManager()
+	{
+
 		Menu menu = new Menu();
 		menu.setOptions(
-			new String[]
-			{ 
-				"Add absence",
-				"Justify absence",
-				"Print today's absence list",
-				"Update semester absence",
-				"Print semester absences"
-			}
-		);
-		menu.setName("Student's absence management");
+				new String[]
+						{ 
+						"Add absence",
+						"Provide Teacher MC",
+						"Clean up list",
+						"Print teacher absence list"
+						}
+				);
+		menu.setName("Teacher's absence management");
 
 		boolean loop = true;
 		while(loop)
@@ -45,165 +167,87 @@ public class AbsenceTracker extends IBIO
 				String lastName = input("Last name: ");
 				while(!lastName.matches("[a-zA-z ]+") && (lastName.compareTo("") != 0))
 					lastName = input("Only alphabetical allowed. Last name: ");
-				DoubleLinkedList dl = sc.search('S', RandomAccess.SEARCH_BY_NAME, lastName.toUpperCase());
-				Student student = null;				
-				
-				// Check if any of the returned student is already marked as absent on the SDAL
-				// Do only if we have found a student in our search and the SDAL is not empty
-				student = (Student) dl.first();
-				if ((student != null) && !sdal.getAbsenceList().isEmpty())
+				if (lastName.compareTo("") == 0)
 				{
-					while(student != null)
-					{
-						int i;
-						Absence testIfThere = (Absence) sdal.getAbsenceList().first();
-						for(i = 0; i < sdal.getAbsenceList().size(); i++)
-						{
-							if (student.getId() == testIfThere.getStudent().getId())
-							{
-								break;
-							}
-							testIfThere = (Absence) sdal.getAbsenceList().after();
-						}
-						if (i < sdal.getAbsenceList().size())
-						{
-							// The student found is already on the SDAL
-							// remove it from the list of student found in order to avoid to present it
-							student = (Student) dl.removeCurrent();
-						}
-						else
-						{
-							// The student has not been marked absent yet
-							// It is a valid entry in the student found list to be presented
-							student = (Student) dl.after();
-						}
-					}
+					break;
 				}
-				
+				DoubleLinkedList dl = sc.search('T', RandomAccess.SEARCH_BY_NAME, lastName.toUpperCase());
 				if (dl.isEmpty())
 				{
-					Utils.printError("No students found");
+					Utils.printError("No teacher found");
 					break;
 				}
 				else
 				{
-					int counter = 1;
-					student = (Student) dl.first();
-					while(student != null)
-					{
-						System.out.println(counter + ") " + student.getId() + " " + student.getLastName() +
-								" " + student.getFirstName());
-						counter++;
-						student = (Student) dl.after();
-					}
-					int choice = inputInt("Enter student number (Return to exit): ");
-					while ((choice < 0) || (choice > dl.size()))
-						choice = inputInt("invalid choice try again. Enter student number (Return to exit): ");
-					if (choice == 0)
+					Teacher teacher = (Teacher) showPages(dl, true);
+					if (teacher == null)
 						break;
-					student = (Student) dl.first();
-					for(int i = 1; i< choice; i++)
-						student = (Student) dl.after();
+					ta.addAbsence(teacher, new Date());
+					fileMngr.setFileName(c.getTeacherAbsencePath());
+					fileMngr.Save(ta);
+					Utils.printError("Absence added");
 				}
-				sdal.addAbsence(new Absence(student));
-				fileMngr.setFileName(c.getStudentDailyAbsencePath());
-				fileMngr.Save(sdal);
-				Utils.printError("Absence added");
 				break;
 			
 			case 2:
-				dl = sdal.getAbsenceList(); 
-				Absence absence = (Absence) dl.first();
-				int counter = 1;
-				boolean innerLoop = true;
-				int pageSize = 4;
-				while(innerLoop)
+				Utils.clearScreen();
+				System.out.println("** Provide Teacher MC **\n");
+				dl = ta.getAbsenceList(); 
+				if (dl.isEmpty())
 				{
-					Utils.clearScreen();
-					System.out.println("** Justify absence **\n");
-					int startFrom = counter;
-					for(int i = 1; (i % pageSize != 0) && (absence != null); i++)
-					{
-						student = absence.getStudent();
-						System.out.println(counter + ") " +
-										   String.format("%06d %-20s%-30s%-15s%c",
-												   		 student.getId(), 
-												   		 student.getLastName(), 
-												   		 student.getFirstName(), 
-												   		 student.getContactNumber(), 
-												   		 absence.getJustified()));
-						absence = (Absence) dl.after();
-						counter++;
-					}
-					while(true)
-					{
-						String prompt = "\nChoose a number to act on student or e'X'it";
-						if (absence != null)
-							prompt += " 'N'ext";
-						if (startFrom > 1)
-							prompt += " 'P'rev";
-						prompt += ": ";
-						String whatNow = input(prompt).toUpperCase();
-						if (whatNow.compareTo("X") == 0)
-						{
-							innerLoop = false;
-							break;
-						}
-						
-						if ((absence != null) && whatNow.compareTo("N") == 0)
-						{
-							break;
-						}
-						
-						if ((startFrom > 1) && (whatNow.compareTo("P") == 0))
-						{
-							int linesOnPage = counter - startFrom;
-							for(int i = pageSize + linesOnPage; (i > 1); i--)
-							{
-								counter--;
-								if (absence == null)
-									absence = (Absence) dl.last();
-								else
-									absence = (Absence) dl.before();
-							}
-							if (absence == null)
-							{
-								absence = (Absence) dl.first();
-								counter = 1;
-							}
-							break;
-						}
-						
-						if (whatNow.matches("[0-9]+"))
-						{
-							int studentSelected = Integer.parseInt(whatNow);
-							if ((studentSelected >= startFrom) && (studentSelected < counter))
-							{
-								char justify = inputChar("Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
-								while("YNL".indexOf(Character.toUpperCase(justify)) == -1)
-									justify = inputChar("Wrong choice. Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
-								justify = Character.toUpperCase(justify);
-								DoubleLinkedList.DoubleLinkedListElement current = dl.getPointerToCurrent();
-								for(int i = counter; i > studentSelected; i--)
-								{
-									absence = (Absence) dl.before();
-								}
-								sdal.setJustified(absence.getStudent(), justify);
-								dl.setPointerToCurrent(current);
-								for(int i = counter; i > startFrom; i--)
-								{
-									counter--;
-									absence = (Absence) dl.before();
-								}
-								break;
-							}
-						}
-					}
-					
-					System.out.println("");
+					Utils.printError("no absences recorded today");
+					break;
+				}
+				TeacherAbsenceDates tad = (TeacherAbsenceDates) showPages(dl, true);
+				if (tad == null)
+					break;
+				if(Utils.getYesNo("Comfirm MC for: " + tad.getPerson().getLastName() + " " +
+						tad.getPerson().getFirstName() + "? "))
+				{
+					ta.CleanUpTeacherMC(tad.getPerson());
+					Utils.printError("Teacher Justified");
 				}
 				break;
-					
+			case 3:
+				Utils.clearScreen();
+				System.out.println("**Clean up list**\n");
+				if(Utils.getYesNo("Comfirm cleaning up the MC list? :"))
+				{
+					ta.CleanUpTeacherMC();
+					Utils.printError("MC list cleaned");
+				}
+				break;
+				
+			case 4:
+				Utils.clearScreen();
+				System.out.println("** Print teacher absence list **\n");
+				dl = ta.getAbsenceList();
+				if (dl.isEmpty())
+				{
+					Utils.printError("no absences in the teacher absence list");
+					break;
+				}
+				tad = (TeacherAbsenceDates) showPages(dl, true);
+				if (tad == null)
+					break;
+				Utils.clearScreen();
+				System.out.println(
+						String.format("Absences for teacher: %06d %s %s  %s\n",
+								tad.getPerson().getId(), 
+								tad.getPerson().getLastName(), 
+								tad.getPerson().getFirstName(), 
+								tad.getPerson().getContactNumber()));
+				DoubleLinkedList dateList = tad.getAbsenceDates();
+				Date absenceDate = (Date) dateList.first();
+				for(int i = 0; i < dateList.size(); i++)
+				{
+					System.out.println((i+1) + ") " + 
+							Utils.dateFormat(c.getDateFormatter(), absenceDate));
+					absenceDate = (Date) dateList.after();
+				}
+				Utils.getReturn();
+				break;
+				
 			default:
 				loop = false;
 				break;
@@ -211,17 +255,141 @@ public class AbsenceTracker extends IBIO
 		}
 	}
 	
-	private static void stlMenuManager()
+	private static void dsaMenuManager()
 	{
 		Menu menu = new Menu();
 		menu.setOptions(
-			new String[]
-			{ 
-				"Add",
-				"Remove",
-				"Search and Update"
+				new String[]
+						{ 
+						"Add absence",
+						"Justify or print todays absence",
+						"Update semester absence",
+						"Print semester absences"
+						}
+				);
+		menu.setName("Student's absence management");
+
+		boolean loop = true;
+		while(loop)
+		{
+			Absence absence;
+			switch(menu.getChoice())
+			{
+			case 1:
+				Student student;
+				Utils.clearScreen();
+				System.out.println("** Add absence **\n");
+				String lastName = input("Last name: ");
+				while(!lastName.matches("[a-zA-z ]+") && (lastName.compareTo("") != 0))
+					lastName = input("Only alphabetical allowed. Last name: ");
+				if (lastName.compareTo("") == 0)
+				{
+					break;
+				}
+				DoubleLinkedList dl = sc.search('S', RandomAccess.SEARCH_BY_NAME, lastName.toUpperCase());
+				if (dl.isEmpty())
+				{
+					Utils.printError("No student found");
+					break;
+				}
+				else
+				{
+					student = (Student) showPages(dl, true);
+					sdal.addAbsence(new Absence(student));
+					fileMngr.setFileName(c.getStudentDailyAbsencePath());
+					fileMngr.Save(sdal);
+					Utils.printError("Absence added");
+				}
+				break;
+
+			case 2:
+				dl = sdal.getAbsenceList(); 
+				if (dl.isEmpty())
+				{
+					Utils.printError("no absences recorded today");
+					break;
+				}
+				absence = (Absence) showPages(dl, true);
+				if (absence == null)
+					break;
+				char justify = inputChar("Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
+				while("YNL".indexOf(Character.toUpperCase(justify)) == -1)
+					justify = inputChar("Wrong choice. Enter justification type ('Y'es, 'N'ot, 'L'ate): ");
+				justify = Character.toUpperCase(justify);
+
+				// mark the justified char in the absence for the referred student
+				sdal.setJustified(absence.getStudent(), justify);
+				break;
+
+			case 3:
+				Utils.clearScreen();
+				System.out.println("**Updated semester absence**");
+				if (!Utils.getYesNo("Confirm to add today's absences to the semester list (Y/N)? "))
+					break;
+
+				dl = sdal.getAbsenceList();
+				absence = (Absence) dl.first();
+				while(absence != null)
+				{
+					ssal.addAbsence(absence.getStudent(), sdal.getDate());
+					absence = (Absence) dl.after();
+				}
+				fileMngr.setFileName(c.getStudentSemesterAbsencePath());
+				fileMngr.Save(ssal);
+				sdal = new StudentDailyAbsenceList();
+				fileMngr.setFileName(c.getStudentDailyAbsencePath());
+				fileMngr.Save(sdal);
+				break;
+
+			case 4:
+				Utils.clearScreen();
+				System.out.println("**Print semester absence**");
+				dl = ssal.getSemesterAbsence();
+				if (dl.isEmpty())
+				{
+					Utils.printError("no absences recorded for this semester");
+					break;
+				}
+				PersonAbsenceDates pad = (PersonAbsenceDates) showPages(dl, true);
+				if (pad == null)
+					break;
+				Utils.clearScreen();
+				System.out.println(
+						String.format("Absences for student: %06d %s %s  %s\n",
+								pad.getPerson().getId(), 
+								pad.getPerson().getLastName(), 
+								pad.getPerson().getFirstName(), 
+								pad.getPerson().getContactNumber()));
+				DoubleLinkedList dateList = pad.getAbsenceDates();
+				Date absenceDate = (Date) dateList.first();
+				for(int i = 0; i < dateList.size(); i++)
+				{
+					System.out.println((i+1) + ") " + 
+							Utils.dateFormat(c.getDateFormatter(), absenceDate));
+					absenceDate = (Date) dateList.after();
+				}
+				Utils.getReturn();
+				break;
+
+			default:
+				loop = false;
+				break;
 			}
-		);
+		}
+	}
+
+	private static void stlMenuManager() throws RandomAccessException
+	{
+		Menu menu = new Menu();
+		menu.setOptions(
+				new String[]
+						{ 
+						"Add",
+						"Remove",
+						"Search and Update",
+						"Print school citizen list"
+						}
+				);
 		menu.setName("School citizens maintenance");
 
 		boolean loop = true;
@@ -232,15 +400,26 @@ public class AbsenceTracker extends IBIO
 			case 1:
 				Utils.clearScreen();
 				System.out.println("** Add new school citizen **\n");
-				String firstName = input("First name: ");
-				while(!firstName.matches("[a-zA-z ]+"))
-					firstName = input("Only alphabetical allowed. First name: ");
-				String lastName = input("Last name: ");
-				while(!lastName.matches("[a-zA-z ]+"))
-					lastName = input("Only alphabetical allowed. Last name: ");
-				String contactNumber = input("Contact number: ");
-				while(!contactNumber.matches("\\+[1-9][0-9]+"))
-					contactNumber = input("International number prefixed by + country code. Contact number: ");
+				String firstName = Utils.getStringInput("First name: ", "", "[a-zA-Z]{0,30}",
+									"Only alphabetical allowed with a max of 30 characters.\n");
+				if (firstName.compareTo("") == 0)
+				{
+					break;
+				}
+				String lastName = Utils.getStringInput("Last name: ", "", "[a-zA-Z]{0,20}",
+						"Only alphabetical allowed with a max of 20 characters.\n");
+				if (lastName.compareTo("") == 0)
+				{
+					break;
+				}
+				
+				String contactNumber = Utils.getStringInput("Contact number: ", "", "\\+[1-9][0-9]{1,13}",
+						"International number prefixed by + country code. Max 15 characters.\n");
+				if (contactNumber.compareTo("") == 0)
+				{
+					break;
+				}
+			
 				char role = inputChar("Role (T or S or A): ");
 				while("STA".indexOf(Character.toUpperCase(role)) == -1)
 					role = inputChar("Role (T or S or A): ");
@@ -254,46 +433,96 @@ public class AbsenceTracker extends IBIO
 				}
 				sc.addElement(role, lastName, firstName, contactNumber, grade);
 				break;
-		
+
 			case 2:
 				Utils.clearScreen();
 				System.out.println("** Remove school citizen **\n");
-				int id = inputInt("ID you are looking for: ");
-				role = inputChar("Role (T or S or A): ");
-				while("STA".indexOf(Character.toUpperCase(role)) == -1)
-					role = inputChar("Role (T or S or A): ");
-				role = Character.toUpperCase(role);
-				try
+				char lookingFor = inputChar("Search by i'D' or last'N'ame (enter D or N): ");
+				while("ND".indexOf(Character.toUpperCase(lookingFor)) == -1)
+					lookingFor = inputChar(" Error wrong character.(enter D for id or N for last name): ");
+				lookingFor = Character.toUpperCase(lookingFor);
+				if (lookingFor == 'N')
 				{
-					DoubleLinkedList dl = sc.search(role, RandomAccess.SEARCH_BY_ID, String.valueOf(id));
-					Person person = (Person) dl.first();
-					if (person == null)
+					lastName = input("Last name: ");
+					while(!lastName.matches("[a-zA-z ]+") && (lastName.compareTo("") != 0))
+						lastName = input("Only alphabetical allowed. Last name: ");
+					if (lastName.compareTo("") == 0)
 					{
-						Utils.printError("The ID entered doesn't exist");
+						break;
+					}
+					DoubleLinkedList dl = sc.search('S', RandomAccess.SEARCH_BY_NAME, lastName.toUpperCase());
+					Student student = null;
+					if (dl.isEmpty())
+					{
+						Utils.printError("No students found");
 						break;
 					}
 					else
 					{
+						int counter = 1;
+						student = (Student) dl.first();
+						while(student != null)
+						{
+							System.out.println(counter + ") " + student.getId() + " " + student.getLastName() +
+									" " + student.getFirstName());
+							counter++;
+							student = (Student) dl.after();
+						}
+						int choice = inputInt("Enter student number (Return to exit): ");
+						while ((choice < 0) || (choice > dl.size()))
+							choice = inputInt("invalid choice try again. Enter student number (Return to exit): ");
+						if (choice == 0)
+							break;
+						student = (Student) dl.first();
+						for(int i = 1; i< choice; i++)
+							student = (Student) dl.after();
 						System.out.println("Please confirm you want to remove:");
-						System.out.println(person.getId() + " " + person.getLastName() + 
-								" " + person.getFirstName() + "\n");
+						System.out.println(student.getId() + " " + student.getLastName() + 
+								" " + student.getFirstName() + "\n");
 						if (!Utils.getYesNo("Confirm deletion (Y/N)?: "))
 							break;
-						sc.removeElement(id, role);
+						sc.removeElement(student.getId(), 'S');
 					}
 				}
-				catch (RandomAccessException e) 
+				else
 				{
-					Utils.printError("Error removing element: " + e.getMessage());
-					break;
+					int id = inputInt("ID you are looking for: ");
+					role = inputChar("Role (T or S or A): ");
+					while("STA".indexOf(Character.toUpperCase(role)) == -1)
+						role = inputChar("Role (T or S or A): ");
+					role = Character.toUpperCase(role);
+					try
+					{
+						DoubleLinkedList dl = sc.search(role, RandomAccess.SEARCH_BY_ID, String.valueOf(id));
+						Person person = (Person) dl.first();
+						if (person == null)
+						{
+							Utils.printError("The ID entered doesn't exist");
+							break;
+						}
+						else
+						{
+							System.out.println("Please confirm you want to remove:");
+							System.out.println(person.getId() + " " + person.getLastName() + 
+									" " + person.getFirstName() + "\n");
+							if (!Utils.getYesNo("Confirm deletion (Y/N)?: "))
+								break;
+							sc.removeElement(id, role);
+						}
+					}
+					catch (RandomAccessException e) 
+					{
+						Utils.printError("Error removing element: " + e.getMessage());
+						break;
+					}
+					Utils.printError("the ID " + String.valueOf(id) + " has been removed");
 				}
-				Utils.printError("the ID " + String.valueOf(id) + " has been removed");
 				break;
-			
+
 			case 3:
 				Utils.clearScreen();
 				System.out.println("** Search and Update school citizens **\n");
-				id = inputInt("ID you are looking for: ");
+				int id = inputInt("ID you are looking for: ");
 				role = inputChar("Role (T or S or A): ");
 				while("STA".indexOf(Character.toUpperCase(role)) == -1)
 					role = inputChar("Role (T or S or A): ");
@@ -307,27 +536,26 @@ public class AbsenceTracker extends IBIO
 				}
 				else
 				{
-					firstName = input("First name [" + person.getFirstName() + "]: ");
-					while(!firstName.matches("[a-zA-z ]+") && (firstName.compareTo("") != 0))
-						firstName = input("Only alphabetical allowed. First name [" + 
-											person.getFirstName() + "]: ");
+					firstName = Utils.getStringInput("First name: ", person.getFirstName(), "[a-zA-Z]{0,30}",
+							"Only alphabetical allowed with a max of 30 characters.\n");
 					if (firstName.compareTo("") == 0)
-						firstName = person.getFirstName();
-
-					lastName = input("Last name [" + person.getLastName() + "]: ");
-					while(!lastName.matches("[a-zA-z ]+") && (lastName.compareTo("") != 0))
-						lastName = input("Only alphabetical allowed. Last name [" + 
-											person.getFirstName() + "]: ");
+					{
+						break;
+					}
+					lastName = Utils.getStringInput("Last name: ", person.getLastName(), "[a-zA-Z]{0,20}",
+							"Only alphabetical allowed with a max of 20 characters.\n");
 					if (lastName.compareTo("") == 0)
-						lastName = person.getLastName();
-
-					contactNumber = input("Contact number [" + person.getContactNumber() + "]: ");
-					while(!contactNumber.matches("\\+[1-9][0-9]+") && (contactNumber.compareTo("") != 0))
-						contactNumber = input("International number prefixed by + country code. Contact number [" + 
-											person.getContactNumber() + "]: ");
-					if (contactNumber.compareTo("") == 0)
-						contactNumber = person.getContactNumber();
+					{
+						break;
+					}
 					
+					contactNumber = Utils.getStringInput("Contact number: ", person.getContactNumber(), "\\+[1-9][0-9]{1,13}",
+							"International number prefixed by + country code. Max 15 characters.\n");
+					if (contactNumber.compareTo("") == 0)
+					{
+						break;
+					}
+
 					grade = 0;
 					if (role == 'S')
 					{
@@ -339,7 +567,7 @@ public class AbsenceTracker extends IBIO
 							grade = ((Student) person).getGrade();
 						((Student) person).setGrade(grade);
 					}
-					
+
 					if (Utils.getYesNo("Confirm to update with current data (Y/N)? "))
 					{
 						person.setFirstName(firstName);
@@ -351,6 +579,17 @@ public class AbsenceTracker extends IBIO
 				}
 				break;
 
+			case 4:
+				Utils.clearScreen();
+				System.out.println("** Print school citizen list **\n");
+				role = inputChar("Role looking for (T or S or A): ");
+				while("STA".indexOf(Character.toUpperCase(role)) == -1)
+					role = inputChar("Role (T or S or A): ");
+				role = Character.toUpperCase(role);
+				dl = sc.getAll(role);
+				showPages(dl, false);
+				break;
+				
 			default:
 				loop = false;
 				break;
@@ -362,38 +601,38 @@ public class AbsenceTracker extends IBIO
 	{
 		String password = "";
 		Console console = null;
-	    console = System.console();
-	    if (console == null) 
-	    {
-	    	// ECLIPSE doesn't have a System.console available.
-	    	// This will read a string from System.in instead to allow testing the application in ECLISPE
-	    	System.out.print(prompt);
-	    	BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-	    	try 
-	    	{
+		console = System.console();
+		if (console == null) 
+		{
+			// ECLIPSE doesn't have a System.console available.
+			// This will read a string from System.in instead to allow testing the application in ECLISPE
+			System.out.print(prompt);
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+			try 
+			{
 				password = bufferedReader.readLine();
 			}
-	    	catch (IOException e) 
-	    	{
-	    		password = "@@@@@@@@@@@";
+			catch (IOException e) 
+			{
+				password = "@@@@@@@@@@@";
 			}
-	    }
-	    else
-	    {
+		}
+		else
+		{
 			char[] passwordArray = console.readPassword(prompt);
 			password = new String(passwordArray);
-	    }
-	    return password;
+		}
+		return password;
 	}
-	
+
 	private static boolean authenticate()
 	{
 		String password = "";
 		int id = 0;
-	    for(int i = 0; i < 3; i++)
+		for(int i = 0; i < 3; i++)
 		{
 			Utils.clearScreen();
-			
+
 			int tempId = IBIO.inputInt("Enter your ID " + (id == 0 ? ": " : "[" + id + "]: "));
 			if (tempId != 0)
 				id = tempId;
@@ -405,7 +644,7 @@ public class AbsenceTracker extends IBIO
 			System.out.println("\n\nSomething is wrong with either your id or password, try again...");
 			Utils.getReturn();
 		}
-	    return(false);
+		return(false);
 	}
 
 	public static void main(String[] args) 
@@ -420,16 +659,16 @@ public class AbsenceTracker extends IBIO
 			System.out.println(e.getMessage());
 			System.exit(-1);
 		}
-		
+
 		// Data format from configuration file
 		formatter = new SimpleDateFormat(c.getDateFormatter());
-				
+
 		/*
 		 * Initialization
 		 * All the main objects needed by the application will be initialized from 
 		 * data previously saved on file or as new in case they are not anymore relevant
 		 */
-		
+
 		// Initialize the SchoolCitizen object with all teachers, students and admins
 		// list and indexes
 		sc = null;
@@ -443,7 +682,7 @@ public class AbsenceTracker extends IBIO
 			System.out.println(e.getMessage());
 			System.exit(-1);
 		}
-		
+
 
 		// Initialize users list for authentication based on SchoolCitizen object
 		users = new Users(sc);
@@ -454,29 +693,40 @@ public class AbsenceTracker extends IBIO
 			if (!authenticate())
 				System.exit(-1);
 
-		
+
 		// Initialize StudentsDailyAbsenceList by loading the currently saved data.
 		// If the absence list is not dated today then drop the object and initialize an empty one.
 		fileMngr = new FileSaveLoad(c.getStudentDailyAbsencePath());
 		if (((sdal = (StudentDailyAbsenceList) fileMngr.Load()) == null) ||
-			(formatter.format(sdal.getDate()).compareTo(formatter.format(new Date())) != 0))
+				(formatter.format(sdal.getDate()).compareTo(formatter.format(new Date())) != 0))
 		{
-			sdal = new StudentDailyAbsenceList(c.getStudentDailyAbsencePath());
+			sdal = new StudentDailyAbsenceList();
 			// Save the empty list on file for future restarts
 			fileMngr.Save(sdal);
 		}
-
+		
+		fileMngr.setFileName(c.getTeacherAbsencePath());
+		if ((ta = (TeachersAbsences) fileMngr.Load()) == null)
+		{
+			ta = new TeachersAbsences();
+		}
+		
+		fileMngr.setFileName(c.getStudentSemesterAbsencePath());
+		if ((ssal = (StudentsSemesterAbsenceList) fileMngr.Load()) == null)
+		{
+			ssal = new StudentsSemesterAbsenceList();
+		}
+	
 		mainMenu = new Menu();
 		mainMenu.setOptions(
-			new String[] 
-			{ 
-				"School citizens maintenance",
-				"Student's absence management",
-				"Daily teacher's absence entry",
-				"Unjustified teacher absences list",
-				"Change password"
-			}
-		);
+				new String[] 
+						{ 
+						"School citizens maintenance",
+						"Student's absence management",
+						"Teacher's absence management",
+						"Change password"
+						}
+				);
 		mainMenu.setName("Main Menu");		
 		boolean loop = true;
 		while(loop)
@@ -485,21 +735,30 @@ public class AbsenceTracker extends IBIO
 			{
 			case 1:
 				if (users.getCurrentUser().getRole() == 'A')
-					stlMenuManager();
+				{
+					try 
+					{
+						stlMenuManager();
+					}
+					catch (RandomAccessException e) 
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				else
 					Utils.printError("You are not allowed to use this choice");
 				break;
-			
+
 			case 2:
 				dsaMenuManager();
 				break;
-			
-			case 3:
-				break;
-			case 4:
-				break;
 
-			case 5:
+			case 3:
+				tamMenuManager();
+				break;
+				
+			case 4:
 				Utils.clearScreen();
 				System.out.println("** Change password **\n");
 				String password = getPassword("Enter current password: ");
@@ -528,17 +787,25 @@ public class AbsenceTracker extends IBIO
 						users.authenticate(password, id);
 					}
 					else
-						 Utils.printError("Passwords entered do not match. Try again.");
+						Utils.printError("Passwords entered do not match. Try again.");
 				}
 				else
-					 Utils.printError("You entered a wrong password");
+					Utils.printError("You entered a wrong password");
 				break;
-			
+
 			default:
+				if (Utils.getYesNo("Save data [y/n]: "))
+				{
+					fileMngr.setFileName(c.getTeacherAbsencePath());
+					fileMngr.Save(ta);
+					fileMngr.setFileName(c.getStudentDailyAbsencePath());
+					fileMngr.Save(sdal);
+					fileMngr.setFileName(c.getStudentSemesterAbsencePath());
+					fileMngr.Save(ssal);
+				}
 				loop = false;
 				break;
 			}
 		}
-		
 	}
 }

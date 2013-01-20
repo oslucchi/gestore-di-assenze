@@ -8,7 +8,7 @@ public class DoubleLinkedList implements Serializable
 	 * Class to implement the object used in the DoubleLinkedList
 	 * Each element will have pointers to the next and previos element in the list
 	 */
-	public class DoubleLinkedListElement implements Serializable
+	private class DoubleLinkedListElement implements Serializable
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -286,6 +286,24 @@ public class DoubleLinkedList implements Serializable
 		}
 	}
 	
+	/*
+	 * Removes all elements from the list
+	 * To do it, sets current at first and keeps calling removeCurrent until
+	 * the list is empty.
+	 */
+	public Object get(int i)
+	{
+		if ((counter == 0) || (i >= counter) || (i < 0))
+			return(null);
+		
+		DoubleLinkedListElement temp = root.next;
+		for(int y = 0; y < i; y++)
+		{
+			temp = temp.next;
+		}
+		return temp.getData();
+	}
+	
 	public DoubleLinkedListElement getPointerToCurrent()
 	{
 		return current;
@@ -295,4 +313,68 @@ public class DoubleLinkedList implements Serializable
 	{
 		this.current = current;
 	}
+	private boolean hasNextPage = false, hasPrevPage = false;
+	private DoubleLinkedListElement firstItemOnPage = null, lastItemOnPage = null;
+	private int itemsPerPage = 0;
+	
+	public boolean hasNextPage()
+	{
+		return hasNextPage;
+	}
+	
+	public boolean hasPrevPage()
+	{
+		return hasPrevPage;
+	}
+	
+	public void initPageManager(int itemsPerPage)
+	{
+		if (counter == 0)
+		{
+			lastItemOnPage = firstItemOnPage = null;
+			itemsPerPage = 0;
+		}
+
+		this.itemsPerPage = itemsPerPage;
+		hasNextPage = true;
+		lastItemOnPage = firstItemOnPage = root.getNext();		
+	}
+	
+	public DoubleLinkedList getNextPage()
+	{
+		if (!hasNextPage)
+			return(null);
+		
+		DoubleLinkedList retList = new DoubleLinkedList();
+		firstItemOnPage = lastItemOnPage;
+		int i = 0;
+		do 
+		{
+			retList.insertTail(lastItemOnPage.getData());
+			lastItemOnPage = lastItemOnPage.getNext();
+		} while((++i < itemsPerPage) && (lastItemOnPage != root));
+		if (lastItemOnPage == root)
+			hasNextPage = false;
+		else
+			hasNextPage = true;
+		if (firstItemOnPage.getPrev() == root)
+			hasPrevPage = false;
+		else
+			hasPrevPage = true;
+		return(retList);
+	}
+
+	public DoubleLinkedList getPrevPage()
+	{
+		if (!hasPrevPage)
+			return(null);
+		DoubleLinkedList retList = new DoubleLinkedList();
+		for(int i = 0; i < itemsPerPage && firstItemOnPage.getPrev() != root; i++)
+			firstItemOnPage = firstItemOnPage.getPrev();
+		lastItemOnPage = firstItemOnPage;
+		hasNextPage = true;
+		retList = getNextPage();
+		return(retList);
+	}
+
 }

@@ -1,7 +1,10 @@
+import java.io.Serializable;
 import java.util.Date;
 
-public class StudentsSemesterAbsenceList 
+public class StudentsSemesterAbsenceList implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private DoubleLinkedList semesterAbsence;
 	
 	public StudentsSemesterAbsenceList()

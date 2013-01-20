@@ -8,7 +8,7 @@ public class StudentDailyAbsenceList implements Serializable
 	private DoubleLinkedList absenceList;
 	private Date date;
 	
-	public StudentDailyAbsenceList(String fileName)
+	public StudentDailyAbsenceList()
 	{
 		date = new Date();
 		absenceList = new DoubleLinkedList();
@@ -30,7 +30,15 @@ public class StudentDailyAbsenceList implements Serializable
 	
 	public void addAbsence(Absence absence)
 	{
-		this.absenceList.insertTail(absence);
+		Absence testing = (Absence) absenceList.first();
+		for(int i = 0; i < absenceList.size(); i++) 
+		{
+			if(absence.getStudent().getId() == testing.getStudent().getId())
+				break;
+			testing = (Absence) absenceList.after();
+		}
+		if(testing == null)
+			this.absenceList.insertTail(absence);
 	}
 
 	public DoubleLinkedList getAbsenceList() 

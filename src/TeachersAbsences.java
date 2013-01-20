@@ -1,24 +1,11 @@
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TeachersAbsences 
+public class TeachersAbsences implements Serializable
 {
-	public class TeacherAbsenceDates extends PersonAbsenceDates
-	{
-		private static final long serialVersionUID = 1L;
-		private char medCert;		
-		public TeacherAbsenceDates(Person person)
-		{
-			super(person);
-			medCert = ' ';
-		}
-		public char getMedCert() {
-			return medCert;
-		}
-		public void setMedCert(char medCert) {
-			this.medCert = medCert;
-		}
-	}
+	private static final long serialVersionUID = 1L;
+	
 	DoubleLinkedList absenceList;
 	public TeachersAbsences()
 	{
@@ -48,7 +35,9 @@ public class TeachersAbsences
 		}
 		else 
 		{
-			onList.addAbsence(date);
+			if (Utils.dateFormat("yyyy/MM/dd", (Date) onList.getAbsenceDates().last()).compareTo(
+					Utils.dateFormat("yyyy/MM/dd", new Date())) != 0)
+				onList.addAbsence(date);
 		}
 	}
 
@@ -58,22 +47,22 @@ public class TeachersAbsences
 		TeacherAbsenceDates item = (TeacherAbsenceDates) absenceList.first(); 
 		while(item != null)
 		{
-			if(item.medCert != 'X')
+			if(item.getMedCert() != 'X')
 			{
 				SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
 				if(formatter.format(item.getAbsenceDates().last()).compareTo(formatter.format(today)) == 0)
 				{
 					if(item.getAbsenceDates().size() > 1)
 					{
-						item.medCert = 'X';
-						item = (TeacherAbsenceDates) absenceList.after();
+						item.setMedCert('X');
 					}
+					item = (TeacherAbsenceDates) absenceList.after();
 				}
 				else
-				{
 					item = (TeacherAbsenceDates) absenceList.removeCurrent();
-				}
 			}
+			else
+				item = (TeacherAbsenceDates) absenceList.after();
 		}
 	}
 	

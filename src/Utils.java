@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class Utils 
@@ -57,5 +59,38 @@ public class Utils
 			return(true);
 		else
 			return(false);
+	}
+	
+	public static String dateFormat(String format, Date date)
+	{
+		SimpleDateFormat sf = new SimpleDateFormat(format);
+		return(sf.format(date));
+	}
+	
+	public static String getStringInput(String prompt, String defVal, String regExp, String errMsg)
+	{
+		String input = null;
+		String locPrompt = prompt;
+		if (defVal.compareTo("") != 0)
+			locPrompt = locPrompt + "[" + defVal + "]";
+		locPrompt = locPrompt + ": ";
+		while(true)
+		{
+			input = IBIO.input(locPrompt);
+			while(!input.matches(regExp) && (input.compareTo("") != 0))
+				input = IBIO.input(errMsg + locPrompt);
+			if (input.compareTo("") == 0)
+			{
+				if (defVal.compareTo("") == 0)
+				{
+					if (!Utils.getYesNo("Abort data entry [y/n]: "))
+						continue;
+				}
+				else
+					return(defVal);
+			}
+			else
+				return(input);
+		}
 	}
 }

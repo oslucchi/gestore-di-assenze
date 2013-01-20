@@ -14,7 +14,7 @@ public class TeachersAbsencesTest {
 	{
 		System.out.println("\n ****************************\nList Content: \n");
 		dl = testing.getAbsenceList();
-		TeachersAbsences.TeacherAbsenceDates b = (TeachersAbsences.TeacherAbsenceDates) dl.first();
+		TeacherAbsenceDates b = (TeacherAbsenceDates) dl.first();
 		while(b != null)
 		{
 			System.out.println(b.getPerson().lastName + " " + b.getPerson().firstName + " " + b.getMedCert());
@@ -27,7 +27,7 @@ public class TeachersAbsencesTest {
 				date = (Date) c.after();
 			}
 			System.out.println();
-			b = (TeachersAbsences.TeacherAbsenceDates) dl.after();
+			b = (TeacherAbsenceDates) dl.after();
 		}
 	}
 	@Test
