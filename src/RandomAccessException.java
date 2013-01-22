@@ -1,4 +1,12 @@
-
+/*
+ * Program Name : 
+ * Author:
+ * Date
+ * School
+ * Computer Used
+ * IDE USed
+ * Purpose
+ */
 public class RandomAccessException extends Exception
 {
 	final static int RECORD_NOT_FOUND = 1;

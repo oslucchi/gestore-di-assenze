@@ -1,4 +1,12 @@
-
+/*
+ * Program Name : 
+ * Author:
+ * Date
+ * School
+ * Computer Used
+ * IDE USed
+ * Purpose
+ */
 public class Teacher extends Person
 {
 	private static final long serialVersionUID = 1L;

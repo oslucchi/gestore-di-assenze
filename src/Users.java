@@ -1,3 +1,12 @@
+/*
+ * Program Name : 
+ * Author:
+ * Date
+ * School
+ * Computer Used
+ * IDE USed
+ * Purpose
+ */
 public class Users 
 {
 	private Person currentUser = null;

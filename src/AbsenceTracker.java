@@ -1,3 +1,12 @@
+/*
+ * Program Name : 
+ * Author:
+ * Date
+ * School
+ * Computer Used
+ * IDE USed
+ * Purpose
+ */
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.FileNotFoundException;
@@ -794,15 +803,15 @@ public class AbsenceTracker extends IBIO
 				break;
 
 			default:
-				if (Utils.getYesNo("Save data [y/n]: "))
-				{
-					fileMngr.setFileName(c.getTeacherAbsencePath());
-					fileMngr.Save(ta);
-					fileMngr.setFileName(c.getStudentDailyAbsencePath());
-					fileMngr.Save(sdal);
-					fileMngr.setFileName(c.getStudentSemesterAbsencePath());
-					fileMngr.Save(ssal);
-				}
+//				if (Utils.getYesNo("Save data [y/n]: "))
+//				{
+//					fileMngr.setFileName(c.getTeacherAbsencePath());
+//					fileMngr.Save(ta);
+//					fileMngr.setFileName(c.getStudentDailyAbsencePath());
+//					fileMngr.Save(sdal);
+//					fileMngr.setFileName(c.getStudentSemesterAbsencePath());
+//					fileMngr.Save(ssal);
+//				}
 				loop = false;
 				break;
 			}

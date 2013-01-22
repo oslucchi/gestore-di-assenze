@@ -1,3 +1,12 @@
+/*
+ * Program Name : 
+ * Author:
+ * Date
+ * School
+ * Computer Used
+ * IDE USed
+ * Purpose
+ */
 import java.io.Serializable;
 
 public class DoubleLinkedList implements Serializable
